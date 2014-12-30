@@ -1,0 +1,95 @@
+usertype String;
+
+const Version1: String;
+const Version2: String;
+
+/* 
+ * Broken protocol - versioned
+ */
+
+protocol protocol1(I,R)
+{
+	role I
+	{
+		fresh ni: Nonce;
+		var nr: Nonce;
+
+		send_1(I, R, Version1, {R, ni}pk(R) );
+		
+		recv_2(R, I, Version1, {ni, nr, R}pk(I) );
+		
+		send_3(I, R, Version1, {nr}pk(R) );
+
+		claim_i1(I,Secret,ni);
+		claim_i2(I,Secret,nr);
+		claim_i3(I,Nisynch);
+	}
+
+	role R
+	{
+		var ni: Nonce;
+		fresh nr: Nonce;
+
+		recv_1(I,R, Version1, {R, ni}pk(R) );
+		
+		send_2(R,I, Version1, {ni, nr, R}pk(I) );
+		
+		recv_3(I,R, Version1, {nr}pk(R) );
+
+		claim_r1(R,Secret,ni);
+		claim_r2(R,Secret,nr);
+		claim_r3(R,Nisynch);
+	}
+}
+
+/* 
+ * Broken protocol - My Fix: - versioned
+ *
+ *   was:
+ * 		send_1(I, R, {R, ni}pk(R) );
+ *   now:
+ *		send_1(I, R, {I, ni}pk(R) );
+ *
+ *   note: 'I' now includes its own 'identity'
+ *         encrypted with pk(R)
+ *         the decrypted 'I' on the 'R' side
+ *         has to unify with 'R's other 'I' references
+ *         => we now provide 'I identification'
+ */
+
+protocol protocol1fixed(I,R)
+{
+	role I
+	{
+		fresh ni: Nonce;
+		var nr: Nonce;
+
+		send_1(I, R, Version2, {I, ni}pk(R) );
+
+		recv_2(R, I, Version2, {ni, nr, R}pk(I) );
+
+		send_3(I, R, Version2, {nr}pk(R) );
+
+
+		claim_i1(I, Secret, ni);
+		claim_i2(I, Secret, nr);
+		claim_i3(I, Nisynch);
+	}
+
+	role R
+	{
+		var ni: Nonce;
+		fresh nr: Nonce;
+
+		recv_1(I, R, Version2, {I, ni}pk(R) );
+		
+		send_2(R, I, Version2, {ni, nr, R}pk(I) );
+		
+		recv_3(I, R, Version2, {nr}pk(R) );
+
+
+		claim_r1(R,Secret,ni);
+		claim_r2(R,Secret,nr);
+		claim_r3(R,Nisynch);
+	}
+}

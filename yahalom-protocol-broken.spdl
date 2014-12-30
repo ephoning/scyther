@@ -1,0 +1,57 @@
+/*
+ * Yahalom protocol
+ *
+ * purpose: exchange a new symmetric key between two principals
+ *          with the help of a server
+ *
+ *
+ * this version is broken: the undecryptable term '{ I, skey }k(R,S)' as received
+ * by I from S should be represented as a (opaque) ticket, as that properly reflects the fact
+ * that 'k(R,S)' is not in I's knowledge base
+ *
+ * the correct version is in: yaholom-protocol-ticket.pdsl
+ */
+
+
+usertype SessionKey;
+
+protocol protocol1(I,R,S)
+{
+	role I
+	{
+		fresh ni: Nonce;
+		var nr: Nonce;
+		var skey: SessionKey;
+		
+		send_1( I, R, (I, ni) );
+		recv_3( S, I, ( { R, skey, ni, nr }k(I,S), { I, skey }k(R,S) ) );
+		send_4( I, R, ( { I, skey }k(R,S), {nr}skey ) );
+
+		claim_i1(I, Secret, skey);
+		claim_i2(I, Nisynch);
+	}
+
+	role R
+	{
+		var ni: Nonce;
+		fresh nr: Nonce;
+		var skey: SessionKey;
+		
+		recv_1( I, R, ( I, ni) );
+		send_2( R, S, ( R, {I, ni, nr}k(R,S) ) );
+		recv_4( I, R, ( { I, skey }k(R,S), {nr}skey ) );
+
+		claim_r1(R, Secret, skey);
+		claim_r2(R, Nisynch);
+	}
+
+	role S
+	{
+		var ni: Nonce;
+		var nr: Nonce;
+		fresh skey: SessionKey;
+		
+		recv_2( R, S, ( R, {I, ni, nr}k(R,S) ) );
+		send_3( S, I, ( { R, skey, ni, nr }k(I,S), { I, skey }k(R,S) ) );
+	}
+}

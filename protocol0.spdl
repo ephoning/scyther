@@ -1,0 +1,27 @@
+/* 
+ * Secrecy protocol
+ *
+ * Uses asymmetric encryption
+ */
+
+// The protocol description
+
+protocol protocol0(I,R)
+{
+	role I
+	{
+		fresh ni: Nonce;
+
+		send_1(I,R, {I,ni}pk(R) );
+		claim_i(I,Secret,ni);
+	}
+
+	role R
+	{
+		var ni: Nonce;
+
+		recv_1(I,R, {I,ni}pk(R) );
+		claim_r(R,Secret,ni);
+	}
+}
+

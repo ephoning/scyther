@@ -1,0 +1,54 @@
+/*
+ * Yahalom protocol
+ *
+ * purpose: exchange a new symmetric key between two principals
+ *          with the help of a server
+ *
+ * notice the use of the term 'trs' to represent an opaque (from I's prespective) term
+ * (I can not interpret this term but can pass it on to R)
+ */
+
+
+usertype SessionKey;
+
+protocol protocol1(I,R,S)
+{
+	role I
+	{
+		fresh ni: Nonce;
+		var nr: Nonce;
+		var skey: SessionKey;
+		var trs: Ticket;
+		
+		send_1( I, R, (I, ni) );
+		recv_3( S, I, ( { R, skey, ni, nr }k(I,S), trs ) );
+		send_4( I, R, ( trs, {nr}skey ) );
+
+		claim_i1(I, Secret, skey);
+		claim_i2(I, Nisynch);
+	}
+
+	role R
+	{
+		var ni: Nonce;
+		fresh nr: Nonce;
+		var skey: SessionKey;
+		
+		recv_1( I, R, ( I, ni) );
+		send_2( R, S, ( R, {I, ni, nr}k(R,S) ) );
+		recv_4( I, R, ( { I, skey }k(R,S), {nr}skey ) );
+
+		claim_r1(R, Secret, skey);
+		claim_r2(R, Nisynch);
+	}
+
+	role S
+	{
+		var ni: Nonce;
+		var nr: Nonce;
+		fresh skey: SessionKey;
+		
+		recv_2( R, S, ( R, {I, ni, nr}k(R,S) ) );
+		send_3( S, I, ( { R, skey, ni, nr }k(I,S), { I, skey }k(R,S) ) );
+	}
+}
